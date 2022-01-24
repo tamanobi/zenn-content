@@ -19,34 +19,63 @@ published: true # 公開設定（falseにすると下書き）
 
 Kubernetes などが急速に広まる状況で想像することは難しいと思うが、歴史について触れておきます。
 
-- 物理サーバー1台(FTPによるデプロイ)
-- ロードバランサー＆サーバー複数台
-- rsync などで複数台へデプロイ
-- サーバーによって状態が異なる悩み(Python がインストールされていない！とか)
-- プロビジョニング問題によって Puppet、Ansible、Chefが出てきた
-- データセンターでは、サーバー仮想化が普及
-- 一台のつよつよマシンを、複数台の仮想サーバーとして分割
-- 仮想サーバーをうまく商用利用して、パブリッククラウドが生まれました。IaaS
-- ユーザーがサーバースペックを選択して利用する形態です。簡単にサーバーを調達できます。
-- 仮想サーバーは、ホストマシン上でゲストマシンを立ち上げ、OSやカーネル、アプリケーションを動かします。
-- 仮想サーバーは簡単に調達できますが、より細やかなリソース管理が求められていました。
-- そのために必要だったのが、より軽量な仮想化技術です。
-- Docker がそれにあたります。Docker はホストマシンのOSとカーネルを共有し、アプリケーションだけを動作させます。
-- OSやカーネルを仮想化しない分、短時間で起動が可能です。もともと Linux の LXC を使っていましたが、いまでは Linux ディストリビューションに限らず使えるような仕組みに変わっています。
-- Docker は短時間で起動が可能で、一つのサーバーに複数のコンテナを起動できます。
-- となると、どのサーバーにどのコンテナを動かすのかという問題が生じます。
-- これがオーケストレーションです。
-- これらの問題を解決するソフトウェアとして、Kubernetes や Apache Mesos があります。Apache Mesos は Docker 以前から存在していました。
+
+## 物理サーバー
+
+インフラといえば、アプリケーションがどれくらい利用されるか予測し、物理サーバを業者に発注していました（調達と言います）。メーカの都合でハードウェアや仕様が変わったり、求めるサーバーが手に入らないことがあるわけです。
+
+負荷対策では強いマシンを用意したり、ロードバランサーと複数台のマシンで分散処理します。
+
+
+## 複数サーバーへのデプロイ
+
+サーバーが少数台であれば、1台1台にアプリケーションコードを配置（デプロイメント）するのは難しくありません。
+
+rsync などのツールを使って効率的にコードを配置していました。
+
+しかし、サーバー台数が多くなってきたり、さまざまなサーバー（仕様やOS）が混在するようになると難度は上がっていきます。セットアップにミスがあると、サーバーによっては Python が入っていないだとか、バージョンが古いだとか、トラブルを引き起こします。
+
+こうしたサーバ環境を管理することをプロビジョニングと言います。Puppet、Ansible、Chef がそれらツールの代表です。サーバーに一括で同じスクリプトを実行することが簡単になりました。
+
+
+## 仮想化技術
+
+データセンターでは、サーバー仮想化が普及することになります。1台のつよつよマシンを、複数台の仮想サーバとして分割するための技術です。
+
+ホストマシンの中で OS とカーネルを仮想化し、ユーザにアプリケーション実行環境を公開します。レンタルサーバの裏側で使われている技術です。
+
+この仮想化技術を使って大量のサーバを保持する会社が、指定したサーバスペックを短時間で調達する IaaS が生まれました。仮想化によってサーバ環境の統一やプロビジョニングが容易になりました。
+
+
+## Docker の誕生
+
+先程述べた仮想化技術はスーパーバイザ型、ホスト型などと呼ばれ、ホストマシン上でゲストマシンを立ち上げ、 OS やカーネル、アプリケーションを動かします。
+
+これらの技術を使うと、サーバ調達は短時間で簡単に済みます。とはいえ、もっと素早いリソースの調整が求められていました。アプリケーションが主体になっていく流れの中で OS やカーネルまで仮想化が必要なのかという疑問が生まれました。
+
+
+アプリケーション動作環境をうまく仮想化するだけの技術として Docker が生まれました。 Docker はホストマシンのOSとカーネルを共有し、アプリケーションだけを動作させます。
+
+OSやカーネルを仮想化しない分、短時間で起動が可能です。もともと Linux の namespace と LXC を使っていましたが、いまでは Linux ディストリビューションに限らず Window や macOS などで使えるような仕組みに変わっています。
+
+
+## コンテナオーケストレーション
+
+Docker はコンテナと呼ばれる隔離環境でアプリケーションを実行します。1台のサーバ上でお互いのプロセスに影響を与えることなく、複数のコンテナを動かすことが可能になります。
+
+となると、どのサーバーにどのコンテナを動かすのかという問題が生じます。これを解決するのが、コンテナオーケストレーションツールです。 Kubernetes や Apache Mesos がそれらにあたります。Apache Mesos は Docker 以前から存在していました。
+
+このようにして簡単に生成・破棄できるコンテナ型仮想化技術が重宝され、新しくオーケストレーションの問題が生まれ、また新しく Kubernetes のようなツールで解決が図られているという流れです。
 
 
 # Docker
 
-Docker を試してみましょう。 まずは whalesay というコマンドを Docker 経由で利用します。
+さて、前置きは以上として Docker を試してみましょう。 まずは whalesay というコマンドを Docker 経由で利用します。
 
 docker run によって Docker Container を起動できます。
 
-```
-$ docker run docker/whalesay cowsay "Hello World!"
+```shell
+docker run docker/whalesay cowsay "Hello World!"
 ```
 
 docker/whalesay は Docker Image の名前です。その後続がコマンドです。`Hello World!` は好きな文字を入れましょう。
@@ -56,8 +85,8 @@ docker/whalesay は Docker Image の名前です。その後続がコマンド�
 
 docker/whalesay は Bash を持っているのでシェルを利用することができます(`-it` で tty を有効化するのを忘れずに)。
 
-```
-$ docker run -it docker/whalesay bash
+```shell
+docker run -it docker/whalesay bash
 ```
 
 試しに OS の情報を参照しましょう。 Ubuntu 14.04.2 LTS であることがわかります。古いですね。いまは 21.04 がリリース済みですし、 20.04 が LTS です。古い環境もすぐに試せるのが Docker の良いところです。
@@ -86,15 +115,15 @@ Docker Image から Docker Container が生成されます。実際に動作す�
 
 ダウンロードした Docker Image は 次のコマンドで閲覧できます。
 
-```
-$ docker image ls
+```shell
+docker image ls
 ```
 
 Docker Container の状況は次のコマンドで閲覧できます( `-a` はストップしているものも表示するオプションです)。
 `docker/whalesay` から作られたコンテナは、コマンド実行後ストップします。
 
-```
-$ docker container ls -a
+```shell
+docker container ls -a
 ```
 
 Web アプリケーションの場合は、ストップしないことが多いので `-a` は不要です。
@@ -132,7 +161,7 @@ CONTAINER ID   IMAGE             COMMAND                  CREATED          STATU
 
 `rm` で削除できます。複数指定できるので、複数出てきた人は複数指定しましょう。
 
-```
+```shell
 docker container rm 3b952dcabf0b 12e392122dcf 6bed5286f103
 ```
 
@@ -224,9 +253,9 @@ hello
 `word` というファイルの中身と同じものが出力されたはずです。ファイルを書き換えてビルドし直せば結果が変わります。
 
 
-```
-$ echo "nyan" > word
-$ docker build -t cat-word .
+```shell
+echo "nyan" > word
+docker build -t cat-word .
 ```
 
 Docker build は結果をキャッシュしているので、ビルドがさきほどよりも短時間で終わります。
@@ -246,9 +275,9 @@ Go のコードはセルフホスティングされているので、 Go のコ�
 
 実際にやっていきましょう。 Go のプロジェクトを始めるときは `go mod init` から始めます。
 
-```
-$ mkdir gohandson
-$ go mod init go-docker-handson
+```shell
+mkdir gohandson
+go mod init go-docker-handson
 ```
 
 昔は GOPATH や GOROOT という環境変数に依存していましたが、いまでは気にする必要はありません。
@@ -276,33 +305,33 @@ Go の関数や変数は、大文字からスタートするとほかのパッ�
 
 `go build` によってシングルバイナリを作成できます。
 
-```
-$ go build main.go -o main
+```shell
+go build main.go -o main
 ```
 
 Go はエントリポイントを cmd ディレクトリに下に作ることが多いです。それに則りましょう。
 
-```
-$ mkdir -p cmd/cli
-$ mv main.go cmd/cli
+```shell
+mkdir -p cmd/cli
+mv main.go cmd/cli
 ```
 
 少々拙速ですが、次に HTTP API を作っていきます。 Go は net/http という標準パッケージが強力なのでフレームワークなしでもそこまで困りません。
 
 今回は簡単のため、 [echo](https://echo.labstack.com/) を使います。 インストールは `go get` で行えます。
 
-```
-$ go get github.com/labstack/echo/v4
+```shell
+go get github.com/labstack/echo/v4
 ```
 
-```
-$ mkdir cmd/api
-$ touch cmd/api/main.go
+```shell
+mkdir cmd/api
+touch cmd/api/main.go
 ```
 
 `cmd/api/main.go` には次のように記述しましょう。
 
-```
+```go
 package main
 
 import (
@@ -325,7 +354,7 @@ func main() {
 
 書き終わったら実行します。Web サーバーがリッスンを始めるので localhost:1323 にアクセスして Hello World を確認しましょう。
 
-```
+```shell
 go run cmd/api/main.go
 ```
 
@@ -333,12 +362,12 @@ go run cmd/api/main.go
 
 これを Dockerfile に起こしましょう。 `docker/app` というディレクトリを作って Dockerfile を置きます。
 
-```
-$ mkdir -p docker/app
-$ touch docker/app/Dockerfile
+```shell
+mkdir -p docker/app
+touch docker/app/Dockerfile
 ```
 
-```
+```Dockerfile
 FROM golang:1.17.6 as builder
 WORKDIR /workspace
 COPY . /workspace
@@ -360,16 +389,16 @@ CMD ["./main"]
 
 Dockerfile が書けたらビルドを実行します。今回は myapp という名前でコンテナを作ります。
 
-```
-$ docker build -t myapp -f docker/app/Dockerfile .
+```shell
+docker build -t myapp -f docker/app/Dockerfile .
 ```
 
 ※作成された Docker Image がどれくらいの容量になっているか確認してみてください(コマンドは示しません)。
 
 起動を確認しましょう。 `-p` はコロンを堺に左がホスト側、右がコンテナ側のポートをマップするオプションです。
 
-```
-$ docker run -it -p1323:1323 --rm myapp
+```shell
+docker run -it -p1323:1323 --rm myapp
 ```
 
 `localhost:1323` にアクセスすると echo が動いていることが確認できます。
@@ -381,7 +410,7 @@ Docker はコンテナを操作するためのコマンドでした。一般的�
 
 docker-compose.yaml というファイルを作ります。
 
-```
+```yaml
 version: "3"
 services: 
   app: # サービスの名前
@@ -400,16 +429,22 @@ services:
 実際の開発では docker-compose が非常に便利なので基本的には docker コマンドは使いません。
 
 
-# ここから先はライブコーディング
+# カウンターを作る
 
-## カウンターを作る
+Redis を使ってアクセスカウンターを作ってみましょう。 Go から Redis を利用するために redigo を利用します。
 
-Redis を使ってアクセスカウンターを作ってみましょう。
+Redis はインメモリ型のデータストアです。データベースやキャッシュ、メッセージブローカーとして利用されます。アトミック処理やトランザクション処理もサポートしているため、カウンターのような複数アプリケーションから同時アクセスのあるアプリケーションに適しています。データ構造の関係上、単純なクエリしかサポートしていないため、検索用途には向きません。
 
 
+## redigo のインストール
+
+`go get` で redigo をインストールします。
+
+```shell
+go get github.com/gomodule/redigo/redis
 ```
-$ go get github.com/gomodule/redigo/redis
-```
+
+アプリケーションの変更は次のコミットを参考にしてください。
 
 https://github.com/tamanobi/go-docker-handson/commit/a22930a8feacd29a7d73f2a60c4d1f6163e37f80
 
