@@ -1,0 +1,28 @@
+{
+  "name": "zenn-content",
+  "version": "1.0.0",
+  "description": "content management repository for zenn",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamanobi/zenn-content.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tamanobi/zenn-content/issues"
+  },
+  "homepage": "https://github.com/tamanobi/zenn-content#readme",
+  "dependencies": {
+    "textlint": "^12.1.0",
+    "textlint-rule-preset-ja-spacing": "^2.2.0",
+    "textlint-rule-preset-ja-technical-writing": "^7.0.0",
+    "textlint-rule-preset-japanese": "^7.0.0",
+    "textlint-rule-spellcheck-tech-word": "^5.0.0",
+    "zenn-cli": "^0.1.105"
+  }
+}
